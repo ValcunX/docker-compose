@@ -1,0 +1,51 @@
+version: "3.8"
+
+networks:
+  valcunx_network:
+    name: valcunx_network
+
+services:
+  frontend:
+    container_name: valcunx_frontend
+    image: vulcanx/react-webapp
+    networks:
+      - valcunx_network
+    depends_on:
+      - backend
+      - controller
+    restart: unless-stopped
+
+  backend:
+    container_name: valcunx_backend
+    image: vulcanx/django-server
+    env_file: ./env/backend.env
+    networks:
+      - valcunx_network
+    restart: unless-stopped
+
+  controller:
+    container_name: valcunx_controller
+    image: ubuntu
+    command: tail -F /dev/null
+    env_file: ./env/controller.env
+    networks:
+      - valcunx_network
+    volumes: 
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - backend
+    restart: unless-stopped
+  
+  proxy:
+    container_name: valcunx_proxy
+    image: vulcanx/nginx
+    ports: 
+      - "8082:80"
+    networks:
+      - valcunx_network
+    depends_on:
+      - frontend
+      - backend
+      - controller
+    restart: unless-stopped
+  
